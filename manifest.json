@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "DTF Фильтр розыгрышей",
+  "version": "1.0",
+  "description": "Скрывает посты с розыгрышами на DTF.ru",
+  "permissions": ["storage"],
+  "host_permissions": ["https://dtf.ru/*", "https://*.dtf.ru/*"],
+  "content_scripts": [
+    {
+      "matches": ["https://dtf.ru/*", "https://*.dtf.ru/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "DTF Фильтр"
+  }
+}

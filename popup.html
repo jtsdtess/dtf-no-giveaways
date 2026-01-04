@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+  <meta charset="UTF-8">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      width: 320px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: #eee;
+      padding: 16px;
+    }
+
+    h1 {
+      font-size: 16px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .stats {
+      background: rgba(255, 255, 255, 0.05);
+      padding: 8px 12px;
+      border-radius: 6px;
+      margin-bottom: 16px;
+      font-size: 13px;
+      color: #a0a0a0;
+    }
+
+    .stats strong {
+      color: #e94560;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 8px;
+      color: #a0a0a0;
+    }
+
+    textarea {
+      width: 100%;
+      height: 120px;
+      padding: 10px;
+      border: 1px solid #333;
+      border-radius: 6px;
+      background: #0f0f1a;
+      color: #eee;
+      font-size: 13px;
+      resize: vertical;
+      font-family: inherit;
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: #e94560;
+    }
+
+    .hint {
+      font-size: 11px;
+      color: #666;
+      margin-top: 6px;
+      margin-bottom: 12px;
+    }
+
+    button {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-save {
+      background: #e94560;
+      color: white;
+      margin-bottom: 8px;
+    }
+
+    .btn-save:hover {
+      background: #ff6b6b;
+    }
+
+    .btn-reset {
+      background: transparent;
+      border: 1px solid #333;
+      color: #a0a0a0;
+    }
+
+    .btn-reset:hover {
+      border-color: #666;
+      color: #eee;
+    }
+
+    .success {
+      background: #4ecca3;
+      color: #1a1a2e;
+      padding: 8px;
+      border-radius: 6px;
+      text-align: center;
+      margin-top: 12px;
+      font-size: 13px;
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>🚫 DTF Фильтр</h1>
+
+  <div class="stats">
+    Скрыто постов: <strong id="hiddenCount">—</strong>
+  </div>
+
+  <label for="keywords">Ключевые слова (по одному на строку):</label>
+  <textarea id="keywords" placeholder="розыгрыш&#10;giveaway&#10;конкурс"></textarea>
+  <div class="hint">Регистр не важен. Слова ищутся в заголовке и тексте поста.</div>
+
+  <button class="btn-save" id="saveBtn">💾 Сохранить</button>
+  <button class="btn-reset" id="resetBtn">↩️ Сбросить по умолчанию</button>
+
+  <div class="success" id="success">✓ Сохранено! Обновите страницу DTF.</div>
+
+  <script src="popup.js"></script>
+</body>
+
+</html>
