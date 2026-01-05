@@ -1,7 +1,9 @@
 # Claude-specific
 CLAUDE.md
-rules/
 .claude/
+
+# Rules markdown (internal docs)
+rules/markdown/
 # Dependencies
 node_modules/
 
