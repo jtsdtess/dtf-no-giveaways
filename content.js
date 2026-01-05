@@ -1,28 +1,16 @@
 // ============================================
 // DTF Фильтр розыгрышей — Content Script
 // ============================================
-
-// Слова для фильтрации по умолчанию (дублируется в popup.js)
-const DEFAULT_KEYWORDS = [
-  'розыгрыш', 'розыграю', 'разыгрываю', 'разыгрываем', 'разыграем',
-  'раздача', 'раздаю', 'раздаём', 'конкурс',
-  'giveaway', 'give away', 'giveway',
-  'приз', 'призы', 'выиграй', 'выиграть', 'победитель получит', 'победителю достанется',
-  'подарю подписчику', 'подарю рандомному', 'дарю подписчику',
-  'репост и подписка', 'подпишись и', 'лайк и подписка',
-  'оставь коммент', 'напиши в комментах', 'случайный комментатор', 'рандомный комментатор',
-  'random comment', 'выберу случайного', 'выберу рандомного', 'рандомайзер', 'randomizer',
-  'итоги подведём', 'итоги подведем', 'итоги розыгрыша', 'итоги конкурса',
-  'победитель будет', 'определим победителя', 'выбор победителя',
-  'разыграю ключ', 'раздам ключ', 'раздам ключи', 'дарю ключ', 'дарю steam',
-  'steam key', 'free key', 'халявный ключ', 'бесплатный ключ',
-  'contest', 'sweepstakes', 'lottery', 'raffle', 'win a', 'chance to win', 'enter to win', 'free stuff',
-  'участвуй', 'участвуйте', 'прими участие', 'примите участие', 'для участия',
-  'условия участия', 'условия розыгрыша', 'условия конкурса', 'правила розыгрыша', 'правила конкурса',
-]
+// PRESET_KEYWORDS загружается из presets.js (подключается в manifest.json)
 
 const POST_SELECTOR = 'div.content'
-const TEXT_SELECTORS = ['.content-title a', '.content-title', '.block-text p', '.block-text', '.content__body']
+const TEXT_SELECTORS = [
+  '.content-title a',
+  '.content-title',
+  '.block-text p',
+  '.block-text',
+  '.content__body',
+]
 
 // Стили для плашки скрытого поста
 const PLACEHOLDER_STYLES = {
@@ -42,25 +30,42 @@ const PLACEHOLDER_STYLES = {
     box-sizing: border-box;
   `,
   shown: 'border-color: #4ecca3',
-  hover: 'transform: scale(1.005); box-shadow: 0 4px 12px rgba(233, 69, 96, 0.2)',
+  hover:
+    'transform: scale(1.005); box-shadow: 0 4px 12px rgba(233, 69, 96, 0.2)',
 }
 
-let keywords = [...DEFAULT_KEYWORDS]
+let keywords = [...PRESET_KEYWORDS]
+let customKeywords = []
+let disabledPresets = [] // Отключенные предустановленные слова
 let hiddenCount = 0
 // Статистика: { слово: количество_скрытых_постов }
 const keywordStats = {}
 
 // ============================================
-// Загрузка ключевых слов из хранилища
+// Получить полный список слов для фильтрации
+// ============================================
+function getAllKeywords() {
+  const activePresets = PRESET_KEYWORDS.filter((k) => !disabledPresets.includes(k))
+  return [...new Set([...activePresets, ...customKeywords])]
+}
+
+// ============================================
+// Загрузка пользовательских слов из хранилища
 // ============================================
 function loadKeywords() {
   return new Promise((resolve) => {
-    chrome.storage.sync.get(['keywords'], (result) => {
+    chrome.storage.sync.get(['customKeywords', 'disabledPresets'], (result) => {
       if (chrome.runtime.lastError) {
         console.error('[DTF Фильтр] Ошибка загрузки:', chrome.runtime.lastError)
-      } else if (result.keywords && Array.isArray(result.keywords)) {
-        keywords = result.keywords
+      } else {
+        if (result.customKeywords && Array.isArray(result.customKeywords)) {
+          customKeywords = result.customKeywords
+        }
+        if (result.disabledPresets && Array.isArray(result.disabledPresets)) {
+          disabledPresets = result.disabledPresets
+        }
       }
+      keywords = getAllKeywords()
       resolve()
     })
   })
@@ -136,7 +141,8 @@ function hidePost(postElement, matchedKeyword) {
         </span>
         <span style="color: #666; font-size: 12px;">Нажмите, чтобы скрыть</span>
       `
-      placeholder.style.cssText = PLACEHOLDER_STYLES.base + PLACEHOLDER_STYLES.shown
+      placeholder.style.cssText =
+        PLACEHOLDER_STYLES.base + PLACEHOLDER_STYLES.shown
     } else {
       postElement.style.display = 'none'
       placeholder.innerHTML = `
@@ -152,10 +158,13 @@ function hidePost(postElement, matchedKeyword) {
   })
 
   placeholder.addEventListener('mouseenter', () => {
-    placeholder.style.cssText = PLACEHOLDER_STYLES.base + PLACEHOLDER_STYLES.hover
+    placeholder.style.cssText =
+      PLACEHOLDER_STYLES.base + PLACEHOLDER_STYLES.hover
   })
   placeholder.addEventListener('mouseleave', () => {
-    placeholder.style.cssText = isHidden ? PLACEHOLDER_STYLES.base : PLACEHOLDER_STYLES.base + PLACEHOLDER_STYLES.shown
+    placeholder.style.cssText = isHidden
+      ? PLACEHOLDER_STYLES.base
+      : PLACEHOLDER_STYLES.base + PLACEHOLDER_STYLES.shown
   })
 
   console.log(`[DTF Фильтр] Скрыт пост: "${matchedKeyword}"`)
@@ -191,7 +200,9 @@ function refilterPosts() {
   hiddenCount = 0
 
   // Удаляем все плашки
-  document.querySelectorAll('.dtf-filter-placeholder').forEach((el) => el.remove())
+  document
+    .querySelectorAll('.dtf-filter-placeholder')
+    .forEach((el) => el.remove())
 
   // Снимаем метки фильтрации
   document.querySelectorAll('[data-dtf-filtered]').forEach((post) => {
@@ -236,7 +247,9 @@ function setupObserver() {
 // ============================================
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'UPDATE_KEYWORDS') {
-    keywords = message.keywords
+    customKeywords = message.customKeywords || []
+    disabledPresets = message.disabledPresets || []
+    keywords = getAllKeywords()
     refilterPosts()
     sendResponse({ success: true })
     return true
@@ -245,7 +258,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'GET_STATS') {
     sendResponse({
       hiddenCount,
-      keywordStats: { ...keywordStats }
+      keywordStats: { ...keywordStats },
+      customKeywords,
+      presetKeywords: PRESET_KEYWORDS,
+      disabledPresets,
     })
     return true
   }

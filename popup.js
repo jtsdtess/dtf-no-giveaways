@@ -1,42 +1,29 @@
 // ============================================
 // DTF Фильтр — Popup Script
 // ============================================
-
-// Дублируется в content.js — держать в синхроне
-const DEFAULT_KEYWORDS = [
-  'розыгрыш', 'розыграю', 'разыгрываю', 'разыгрываем', 'разыграем',
-  'раздача', 'раздаю', 'раздаём', 'конкурс',
-  'giveaway', 'give away', 'giveway',
-  'приз', 'призы', 'выиграй', 'выиграть', 'победитель получит', 'победителю достанется',
-  'подарю подписчику', 'подарю рандомному', 'дарю подписчику',
-  'репост и подписка', 'подпишись и', 'лайк и подписка',
-  'оставь коммент', 'напиши в комментах', 'случайный комментатор', 'рандомный комментатор',
-  'random comment', 'выберу случайного', 'выберу рандомного', 'рандомайзер', 'randomizer',
-  'итоги подведём', 'итоги подведем', 'итоги розыгрыша', 'итоги конкурса',
-  'победитель будет', 'определим победителя', 'выбор победителя',
-  'разыграю ключ', 'раздам ключ', 'раздам ключи', 'дарю ключ', 'дарю steam',
-  'steam key', 'free key', 'халявный ключ', 'бесплатный ключ',
-  'contest', 'sweepstakes', 'lottery', 'raffle', 'win a', 'chance to win', 'enter to win', 'free stuff',
-  'участвуй', 'участвуйте', 'прими участие', 'примите участие', 'для участия',
-  'условия участия', 'условия розыгрыша', 'условия конкурса', 'правила розыгрыша', 'правила конкурса',
-]
+// PRESET_KEYWORDS загружается из presets.js
 
 // DOM элементы
 const addInput = document.getElementById('addInput')
 const addBtn = document.getElementById('addBtn')
-const tagsContainer = document.getElementById('tagsContainer')
+const customTagsContainer = document.getElementById('customTagsContainer')
+const presetTagsContainer = document.getElementById('presetTagsContainer')
+const presetToggle = document.getElementById('presetToggle')
 const saveBtn = document.getElementById('saveBtn')
 const resetBtn = document.getElementById('resetBtn')
 const successMsg = document.getElementById('success')
 const warningMsg = document.getElementById('warning')
 const hiddenCountEl = document.getElementById('hiddenCount')
 const wordCountEl = document.getElementById('wordCount')
-const keywordsTextarea = document.getElementById('keywords') // скрытый, для совместимости
+const presetCountEl = document.getElementById('presetCount')
+const keywordsTextarea = document.getElementById('keywords')
 
 // Текущее состояние
-let keywords = [...DEFAULT_KEYWORDS]
+let customKeywords = []
+let disabledPresets = [] // Отключенные предустановленные слова
 let keywordStats = {}
 let hasUnsavedChanges = false
+let presetsCollapsed = false
 
 // ============================================
 // Показать/скрыть предупреждение о сохранении
@@ -52,36 +39,16 @@ function hideWarning() {
 }
 
 // ============================================
-// Рендер тегов
+// Переключение видимости пресетов
 // ============================================
-function renderTags() {
-  tagsContainer.innerHTML = ''
+function togglePresets() {
+  presetsCollapsed = !presetsCollapsed
+  presetTagsContainer.classList.toggle('collapsed', presetsCollapsed)
+  presetToggle.classList.toggle('collapsed', presetsCollapsed)
+  presetToggle.textContent = presetsCollapsed ? '◀' : '▼'
 
-  if (keywords.length === 0) {
-    tagsContainer.innerHTML = '<div class="empty-state">Нет ключевых слов</div>'
-    wordCountEl.textContent = '0'
-    return
-  }
-
-  wordCountEl.textContent = keywords.length
-
-  keywords.forEach((keyword) => {
-    const count = keywordStats[keyword] || 0
-
-    const tag = document.createElement('div')
-    tag.className = 'tag'
-    tag.innerHTML = `
-      <span class="tag-text">${escapeHtml(keyword)}</span>
-      <span class="tag-count ${count === 0 ? 'zero' : ''}">${count}</span>
-      <span class="tag-remove" title="Удалить">×</span>
-    `
-
-    tag.querySelector('.tag-remove').addEventListener('click', () => {
-      removeKeyword(keyword)
-    })
-
-    tagsContainer.appendChild(tag)
-  })
+  // Сохраняем состояние
+  chrome.storage.local.set({ presetsCollapsed })
 }
 
 // ============================================
@@ -94,20 +61,111 @@ function escapeHtml(text) {
 }
 
 // ============================================
+// Создание элемента тега
+// ============================================
+function createTagElement(keyword, count, isPreset = false, isDisabled = false) {
+  const tag = document.createElement('div')
+  tag.className = `tag ${isPreset ? 'preset' : ''} ${isDisabled ? 'disabled' : ''}`
+
+  const removeButton = isDisabled
+    ? '<span class="tag-restore" title="Восстановить">+</span>'
+    : '<span class="tag-remove" title="Удалить">×</span>'
+
+  tag.innerHTML = `
+    <span class="tag-text">${escapeHtml(keyword)}</span>
+    <span class="tag-count ${count === 0 ? 'zero' : ''}">${count}</span>
+    ${removeButton}
+  `
+
+  const actionButton = tag.querySelector(isDisabled ? '.tag-restore' : '.tag-remove')
+  actionButton.addEventListener('click', () => {
+    if (isPreset) {
+      togglePresetKeyword(keyword)
+    } else {
+      removeCustomKeyword(keyword)
+    }
+  })
+
+  return tag
+}
+
+// ============================================
+// Переключение пресета (включить/отключить)
+// ============================================
+function togglePresetKeyword(keyword) {
+  const index = disabledPresets.indexOf(keyword)
+  if (index > -1) {
+    // Включаем обратно
+    disabledPresets.splice(index, 1)
+  } else {
+    // Отключаем
+    disabledPresets.push(keyword)
+  }
+  renderPresetTags()
+  showWarning()
+}
+
+// ============================================
+// Рендер кастомных тегов
+// ============================================
+function renderCustomTags() {
+  customTagsContainer.innerHTML = ''
+
+  if (customKeywords.length === 0) {
+    customTagsContainer.innerHTML = '<div class="empty-state">Нет добавленных слов</div>'
+    return
+  }
+
+  customKeywords.forEach((keyword) => {
+    const count = keywordStats[keyword] || 0
+    const tag = createTagElement(keyword, count, false, false)
+    customTagsContainer.appendChild(tag)
+  })
+
+  updateWordCount()
+}
+
+// ============================================
+// Рендер предустановленных тегов
+// ============================================
+function renderPresetTags() {
+  presetTagsContainer.innerHTML = ''
+
+  PRESET_KEYWORDS.forEach((keyword) => {
+    const isDisabled = disabledPresets.includes(keyword)
+    const count = keywordStats[keyword] || 0
+    const tag = createTagElement(keyword, count, true, isDisabled)
+    presetTagsContainer.appendChild(tag)
+  })
+
+  const activePresetsCount = PRESET_KEYWORDS.length - disabledPresets.length
+  presetCountEl.textContent = `${activePresetsCount}/${PRESET_KEYWORDS.length}`
+  updateWordCount()
+}
+
+// ============================================
+// Обновление счётчика слов
+// ============================================
+function updateWordCount() {
+  const activePresetsCount = PRESET_KEYWORDS.length - disabledPresets.length
+  wordCountEl.textContent = customKeywords.length + activePresetsCount
+}
+
+// ============================================
 // Добавление ключевого слова
 // ============================================
 function addKeyword(text) {
   const keyword = text.trim().toLowerCase()
 
   if (!keyword) return false
-  if (keywords.includes(keyword)) {
+  if (customKeywords.includes(keyword)) {
     addInput.value = ''
     return false
   }
 
-  keywords.unshift(keyword) // Добавляем в начало списка
-  keywordsTextarea.value = keywords.join('\n')
-  renderTags()
+  customKeywords.unshift(keyword)
+  keywordsTextarea.value = customKeywords.join('\n')
+  renderCustomTags()
   addInput.value = ''
   addInput.focus()
   showWarning()
@@ -116,31 +174,46 @@ function addKeyword(text) {
 }
 
 // ============================================
-// Удаление ключевого слова
+// Удаление кастомного слова
 // ============================================
-function removeKeyword(keyword) {
-  keywords = keywords.filter((k) => k !== keyword)
-  keywordsTextarea.value = keywords.join('\n')
-  renderTags()
+function removeCustomKeyword(keyword) {
+  customKeywords = customKeywords.filter((k) => k !== keyword)
+  keywordsTextarea.value = customKeywords.join('\n')
+  renderCustomTags()
   showWarning()
 }
 
 // ============================================
-// Загрузка сохранённых ключевых слов
+// Загрузка сохранённых данных
 // ============================================
 function loadKeywords() {
-  chrome.storage.sync.get(['keywords'], (result) => {
+  chrome.storage.sync.get(['customKeywords', 'disabledPresets'], (result) => {
     if (chrome.runtime.lastError) {
       console.error('[DTF Фильтр] Ошибка загрузки:', chrome.runtime.lastError)
-      keywords = [...DEFAULT_KEYWORDS]
-    } else if (result.keywords && Array.isArray(result.keywords)) {
-      keywords = result.keywords
+    } else {
+      if (result.customKeywords && Array.isArray(result.customKeywords)) {
+        customKeywords = result.customKeywords
+      }
+      if (result.disabledPresets && Array.isArray(result.disabledPresets)) {
+        disabledPresets = result.disabledPresets
+      }
     }
 
-    keywordsTextarea.value = keywords.join('\n')
-    renderTags()
-    hideWarning() // Загруженные данные уже сохранены
+    keywordsTextarea.value = customKeywords.join('\n')
+    renderCustomTags()
+    renderPresetTags()
+    hideWarning()
     getStats()
+  })
+
+  // Загружаем состояние свернутости пресетов
+  chrome.storage.local.get(['presetsCollapsed'], (result) => {
+    if (result.presetsCollapsed) {
+      presetsCollapsed = true
+      presetTagsContainer.classList.add('collapsed')
+      presetToggle.classList.add('collapsed')
+      presetToggle.textContent = '◀'
+    }
   })
 }
 
@@ -148,7 +221,7 @@ function loadKeywords() {
 // Сохранение ключевых слов
 // ============================================
 function saveKeywords() {
-  chrome.storage.sync.set({ keywords }, () => {
+  chrome.storage.sync.set({ customKeywords, disabledPresets }, () => {
     if (chrome.runtime.lastError) {
       console.error('[DTF Фильтр] Ошибка сохранения:', chrome.runtime.lastError)
       alert('Ошибка сохранения. Попробуйте снова.')
@@ -166,7 +239,8 @@ function saveKeywords() {
       if (tabs[0]?.url?.includes('dtf.ru')) {
         chrome.tabs.sendMessage(tabs[0].id, {
           type: 'UPDATE_KEYWORDS',
-          keywords,
+          customKeywords,
+          disabledPresets,
         })
       }
     })
@@ -174,15 +248,17 @@ function saveKeywords() {
 }
 
 // ============================================
-// Сброс к значениям по умолчанию
+// Сброс кастомных слов
 // ============================================
 function resetKeywords() {
-  if (!confirm('Сбросить все слова к значениям по умолчанию?')) return
+  if (!confirm('Удалить все добавленные слова и восстановить пресеты?')) return
 
-  keywords = [...DEFAULT_KEYWORDS]
-  keywordsTextarea.value = keywords.join('\n')
+  customKeywords = []
+  disabledPresets = []
+  keywordsTextarea.value = ''
   keywordStats = {}
-  renderTags()
+  renderCustomTags()
+  renderPresetTags()
   showWarning()
 }
 
@@ -197,13 +273,15 @@ function getStats() {
         if (response) {
           hiddenCountEl.textContent = response.hiddenCount || '—'
           keywordStats = response.keywordStats || {}
-          renderTags()
+          renderCustomTags()
+          renderPresetTags()
         }
       })
     } else {
       hiddenCountEl.textContent = '—'
       keywordStats = {}
-      renderTags()
+      renderCustomTags()
+      renderPresetTags()
     }
   })
 }
@@ -213,6 +291,7 @@ function getStats() {
 // ============================================
 saveBtn.addEventListener('click', saveKeywords)
 resetBtn.addEventListener('click', resetKeywords)
+presetToggle.addEventListener('click', togglePresets)
 
 addBtn.addEventListener('click', () => {
   addKeyword(addInput.value)
