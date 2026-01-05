@@ -47,6 +47,8 @@ const PLACEHOLDER_STYLES = {
 
 let keywords = [...DEFAULT_KEYWORDS]
 let hiddenCount = 0
+// Статистика: { слово: количество_скрытых_постов }
+const keywordStats = {}
 
 // ============================================
 // Загрузка ключевых слов из хранилища
@@ -102,6 +104,9 @@ function hidePost(postElement, matchedKeyword) {
 
   postElement.dataset.dtfFiltered = 'true'
   hiddenCount++
+
+  // Записываем статистику по слову
+  keywordStats[matchedKeyword] = (keywordStats[matchedKeyword] || 0) + 1
 
   const originalDisplay = window.getComputedStyle(postElement).display
 
@@ -181,6 +186,10 @@ function scanPosts() {
 // Снять фильтр со всех постов и отсканировать заново
 // ============================================
 function refilterPosts() {
+  // Сбрасываем статистику
+  Object.keys(keywordStats).forEach((key) => delete keywordStats[key])
+  hiddenCount = 0
+
   // Удаляем все плашки
   document.querySelectorAll('.dtf-filter-placeholder').forEach((el) => el.remove())
 
@@ -234,7 +243,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message.type === 'GET_STATS') {
-    sendResponse({ hiddenCount })
+    sendResponse({
+      hiddenCount,
+      keywordStats: { ...keywordStats }
+    })
     return true
   }
 })

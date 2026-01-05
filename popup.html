@@ -11,11 +11,13 @@
     }
 
     body {
-      width: 320px;
+      width: 360px;
+      max-height: 500px;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
       color: #eee;
       padding: 16px;
+      overflow-y: auto;
     }
 
     h1 {
@@ -33,59 +35,139 @@
       margin-bottom: 16px;
       font-size: 13px;
       color: #a0a0a0;
+      display: flex;
+      justify-content: space-between;
     }
 
     .stats strong {
       color: #e94560;
     }
 
-    label {
-      display: block;
-      font-size: 13px;
-      margin-bottom: 8px;
-      color: #a0a0a0;
+    .add-section {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
     }
 
-    textarea {
-      width: 100%;
-      height: 120px;
-      padding: 10px;
+    .add-input {
+      flex: 1;
+      padding: 10px 12px;
       border: 1px solid #333;
       border-radius: 6px;
       background: #0f0f1a;
       color: #eee;
-      font-size: 13px;
-      resize: vertical;
+      font-size: 14px;
       font-family: inherit;
     }
 
-    textarea:focus {
+    .add-input:focus {
       outline: none;
       border-color: #e94560;
     }
 
-    .hint {
-      font-size: 11px;
+    .add-input::placeholder {
       color: #666;
-      margin-top: 6px;
-      margin-bottom: 12px;
     }
 
-    button {
-      width: 100%;
+    .btn-add {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 6px;
+      background: #4ecca3;
+      color: #1a1a2e;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .btn-add:hover {
+      background: #5eddb4;
+    }
+
+    .tags-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 16px;
+      min-height: 40px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      background: rgba(233, 69, 96, 0.15);
+      border: 1px solid #e94560;
+      border-radius: 20px;
+      font-size: 13px;
+      color: #eee;
+      transition: all 0.2s;
+    }
+
+    .tag:hover {
+      background: rgba(233, 69, 96, 0.25);
+      transform: translateY(-1px);
+    }
+
+    .tag-count {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 2px 6px;
+      border-radius: 10px;
+      font-size: 11px;
+      color: #4ecca3;
+      font-weight: 600;
+    }
+
+    .tag-count.zero {
+      color: #666;
+    }
+
+    .tag-remove {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.2);
+      color: #aaa;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      line-height: 1;
+    }
+
+    .tag-remove:hover {
+      background: #e94560;
+      color: white;
+    }
+
+    .empty-state {
+      color: #666;
+      font-size: 13px;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-save {
+      flex: 1;
       padding: 10px;
       border: none;
       border-radius: 6px;
+      background: #e94560;
+      color: white;
       font-size: 14px;
       font-weight: 500;
       cursor: pointer;
       transition: all 0.2s;
-    }
-
-    .btn-save {
-      background: #e94560;
-      color: white;
-      margin-bottom: 8px;
     }
 
     .btn-save:hover {
@@ -93,9 +175,14 @@
     }
 
     .btn-reset {
-      background: transparent;
+      padding: 10px 16px;
       border: 1px solid #333;
+      border-radius: 6px;
+      background: transparent;
       color: #a0a0a0;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
     }
 
     .btn-reset:hover {
@@ -113,6 +200,11 @@
       font-size: 13px;
       display: none;
     }
+
+    /* Скрытый textarea для режима редактирования */
+    #keywords {
+      display: none;
+    }
   </style>
 </head>
 
@@ -120,17 +212,27 @@
   <h1>🚫 DTF Фильтр</h1>
 
   <div class="stats">
-    Скрыто постов: <strong id="hiddenCount">—</strong>
+    <span>Скрыто постов: <strong id="hiddenCount">—</strong></span>
+    <span>Слов: <strong id="wordCount">0</strong></span>
   </div>
 
-  <label for="keywords">Ключевые слова (по одному на строку):</label>
-  <textarea id="keywords" placeholder="розыгрыш&#10;giveaway&#10;конкурс"></textarea>
-  <div class="hint">Регистр не важен. Слова ищутся в заголовке и тексте поста.</div>
+  <div class="add-section">
+    <input type="text" id="addInput" class="add-input" placeholder="Добавить слово..." maxlength="50">
+    <button class="btn-add" id="addBtn">+ Добавить</button>
+  </div>
 
-  <button class="btn-save" id="saveBtn">💾 Сохранить</button>
-  <button class="btn-reset" id="resetBtn">↩️ Сбросить по умолчанию</button>
+  <div class="tags-container" id="tagsContainer">
+    <div class="empty-state">Нет ключевых слов</div>
+  </div>
+
+  <div class="actions">
+    <button class="btn-save" id="saveBtn">💾 Сохранить</button>
+    <button class="btn-reset" id="resetBtn">↻ Сброс</button>
+  </div>
 
   <div class="success" id="success">✓ Сохранено!</div>
+
+  <textarea id="keywords"></textarea>
 
   <script src="popup.js"></script>
 </body>
