@@ -1,0 +1,22 @@
+# Claude-specific
+CLAUDE.md
+rules/
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+*.crx
+*.zip
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
