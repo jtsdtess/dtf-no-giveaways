@@ -28,6 +28,7 @@ const tagsContainer = document.getElementById('tagsContainer')
 const saveBtn = document.getElementById('saveBtn')
 const resetBtn = document.getElementById('resetBtn')
 const successMsg = document.getElementById('success')
+const warningMsg = document.getElementById('warning')
 const hiddenCountEl = document.getElementById('hiddenCount')
 const wordCountEl = document.getElementById('wordCount')
 const keywordsTextarea = document.getElementById('keywords') // скрытый, для совместимости
@@ -35,6 +36,20 @@ const keywordsTextarea = document.getElementById('keywords') // скрытый, 
 // Текущее состояние
 let keywords = [...DEFAULT_KEYWORDS]
 let keywordStats = {}
+let hasUnsavedChanges = false
+
+// ============================================
+// Показать/скрыть предупреждение о сохранении
+// ============================================
+function showWarning() {
+  hasUnsavedChanges = true
+  warningMsg.style.display = 'block'
+}
+
+function hideWarning() {
+  hasUnsavedChanges = false
+  warningMsg.style.display = 'none'
+}
 
 // ============================================
 // Рендер тегов
@@ -95,6 +110,7 @@ function addKeyword(text) {
   renderTags()
   addInput.value = ''
   addInput.focus()
+  showWarning()
 
   return true
 }
@@ -106,6 +122,7 @@ function removeKeyword(keyword) {
   keywords = keywords.filter((k) => k !== keyword)
   keywordsTextarea.value = keywords.join('\n')
   renderTags()
+  showWarning()
 }
 
 // ============================================
@@ -122,6 +139,7 @@ function loadKeywords() {
 
     keywordsTextarea.value = keywords.join('\n')
     renderTags()
+    hideWarning() // Загруженные данные уже сохранены
     getStats()
   })
 }
@@ -137,6 +155,7 @@ function saveKeywords() {
       return
     }
 
+    hideWarning()
     successMsg.style.display = 'block'
     setTimeout(() => {
       successMsg.style.display = 'none'
@@ -164,6 +183,7 @@ function resetKeywords() {
   keywordsTextarea.value = keywords.join('\n')
   keywordStats = {}
   renderTags()
+  showWarning()
 }
 
 // ============================================

@@ -17,6 +17,7 @@
       background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
       color: #eee;
       padding: 16px;
+      padding-bottom: 80px;
       overflow-y: auto;
     }
 
@@ -101,7 +102,7 @@
       padding: 6px 10px;
       background: rgba(233, 69, 96, 0.15);
       border: 1px solid #e94560;
-      border-radius: 20px;
+      border-radius: 6px;
       font-size: 13px;
       color: #eee;
       transition: all 0.2s;
@@ -201,6 +202,33 @@
       display: none;
     }
 
+    .warning {
+      background: rgba(233, 69, 96, 0.2);
+      border: 1px solid #e94560;
+      color: #ff9999;
+      padding: 8px;
+      border-radius: 6px;
+      text-align: center;
+      font-size: 12px;
+      display: none;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+
+    .footer-fixed {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(to top, #16213e 90%, transparent);
+      padding: 12px 16px 16px;
+      z-index: 10;
+    }
+
     /* Скрытый textarea для режима редактирования */
     #keywords {
       display: none;
@@ -225,12 +253,15 @@
     <div class="empty-state">Нет ключевых слов</div>
   </div>
 
-  <div class="actions">
-    <button class="btn-save" id="saveBtn">💾 Сохранить</button>
-    <button class="btn-reset" id="resetBtn">↻ Сброс</button>
-  </div>
+  <div class="warning" id="warning">⚠️ Нажмите «Сохранить» чтобы применить изменения</div>
 
-  <div class="success" id="success">✓ Сохранено!</div>
+  <div class="footer-fixed">
+    <div class="actions">
+      <button class="btn-save" id="saveBtn">💾 Сохранить</button>
+      <button class="btn-reset" id="resetBtn">↻ Сброс</button>
+    </div>
+    <div class="success" id="success">✓ Сохранено!</div>
+  </div>
 
   <textarea id="keywords"></textarea>
 
