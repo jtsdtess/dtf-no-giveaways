@@ -5,21 +5,22 @@
 ## Возможности
 
 - **Автоматическая фильтрация** — посты скрываются при загрузке и при скролле (infinite scroll)
-- **Гибкая настройка** — добавляй и удаляй ключевые слова через popup-меню
+- **Визуальные теги** — управление словами через интерактивные теги с счётчиками скрытых постов
+- **Предустановленные слова** — ~90 слов из коробки, можно отключать индивидуально
+- **Кастомные слова** — добавляй свои слова для фильтрации
 - **Не удаляет посты** — скрытые посты можно развернуть кликом по плашке
-- **60+ ключевых слов** — из коробки фильтрует большинство розыгрышей
 
 ## Скриншоты
 
-| Скрытый пост                      | Popup настроек                  |
-| --------------------------------- | ------------------------------- |
-| ![hidden](screenshots/hidden.png) | ![popup](screenshots/popup.png) |
+| Скрытый пост                           | Popup настроек                      |
+| -------------------------------------- | ----------------------------------- |
+| ![hidden](assets/screenshots/hidden.png) | ![popup](assets/screenshots/popup.png) |
 
 ## Установка
 
 1. Скачай или клонируй репозиторий
 2. Открой `chrome://extensions/`
-3. Включи **«Режим разработчика»** (переключатель справа сверху)
+3. Включи **«Режим разработчика»**
 4. Нажми **«Загрузить распакованное расширение»**
 5. Выбери папку с расширением
 
@@ -27,20 +28,32 @@
 
 После установки расширение работает автоматически на всех страницах DTF.
 
-**Настройка ключевых слов:**
+**Настройка слов:**
 
-1. Кликни на иконку расширения в панели браузера
-2. Отредактируй список слов (по одному на строку)
-3. Нажми «Сохранить»
+1. Кликни на иконку расширения
+2. В поле ввода введи слово и нажми Enter или «+ Добавить»
+3. Для отключения пресета нажми × на зелёном теге
+4. Для восстановления пресета нажми + на сером теге
+5. Нажми «Сохранить» для применения изменений
+
+**Горячие клавиши:**
+- `Ctrl+S` — сохранить изменения
 
 ## Структура проекта
 
 ```
 dtf-filter/
-├── manifest.json    # Конфигурация расширения (Manifest V3)
-├── content.js       # Логика фильтрации постов
-├── popup.html       # Интерфейс настроек
-├── popup.js         # Скрипт popup-меню
+├── manifest.json           # Конфигурация расширения (Manifest V3)
+├── src/
+│   ├── content/
+│   │   ├── content.js      # Логика фильтрации постов
+│   │   └── presets.js      # Предустановленные слова
+│   └── popup/
+│       ├── popup.html      # Интерфейс настроек
+│       ├── popup.js        # Скрипт popup
+│       └── popup.css       # Стили popup
+├── assets/
+│   └── screenshots/        # Скриншоты
 └── README.md
 ```
 
@@ -59,26 +72,27 @@ MIT
 
 # 🚫 DTF Giveaway Filter
 
-A Google Chrome extension that automatically hides giveaway, contest, and raffle posts on [DTF.ru](https://dtf.ru) — a popular Russian gaming and entertainment platform.
+A Google Chrome extension that automatically hides giveaway, contest, and raffle posts on [DTF.ru](https://dtf.ru).
 
 ## Features
 
 - **Automatic filtering** — posts are hidden on page load and during infinite scroll
-- **Customizable keywords** — add or remove filter words via popup menu
+- **Visual tag UI** — manage keywords via interactive tags with hidden post counters
+- **Preset keywords** — ~90 built-in words, individually toggleable
+- **Custom keywords** — add your own filter words
 - **Non-destructive** — hidden posts can be revealed with a single click
-- **60+ keywords** — filters most giveaways out of the box
 
 ## Screenshots
 
-| Hidden post                       | Settings popup                  |
-| --------------------------------- | ------------------------------- |
-| ![hidden](screenshots/hidden.png) | ![popup](screenshots/popup.png) |
+| Hidden post                              | Settings popup                      |
+| ---------------------------------------- | ----------------------------------- |
+| ![hidden](assets/screenshots/hidden.png) | ![popup](assets/screenshots/popup.png) |
 
 ## Installation
 
 1. Download or clone this repository
 2. Open `chrome://extensions/`
-3. Enable **Developer mode** (toggle in the top right corner)
+3. Enable **Developer mode**
 4. Click **Load unpacked**
 5. Select the extension folder
 
@@ -88,18 +102,30 @@ The extension works automatically on all DTF pages after installation.
 
 **Customizing keywords:**
 
-1. Click the extension icon in the browser toolbar
-2. Edit the keyword list (one word per line)
-3. Click «Сохранить» (Save)
+1. Click the extension icon
+2. Type a word and press Enter or click «+ Добавить»
+3. To disable a preset, click × on a green tag
+4. To restore a preset, click + on a gray tag
+5. Click «Сохранить» to apply changes
+
+**Keyboard shortcuts:**
+- `Ctrl+S` — save changes
 
 ## Project Structure
 
 ```
 dtf-filter/
-├── manifest.json    # Extension config (Manifest V3)
-├── content.js       # Post filtering logic
-├── popup.html       # Settings UI
-├── popup.js         # Popup script
+├── manifest.json           # Extension config (Manifest V3)
+├── src/
+│   ├── content/
+│   │   ├── content.js      # Post filtering logic
+│   │   └── presets.js      # Preset keywords
+│   └── popup/
+│       ├── popup.html      # Settings UI
+│       ├── popup.js        # Popup script
+│       └── popup.css       # Popup styles
+├── assets/
+│   └── screenshots/        # Screenshots
 └── README.md
 ```
 
@@ -120,7 +146,7 @@ The extension filters posts containing (case-insensitive):
 | приз, выиграй, выиграть       | win a, chance to win      |
 | для участия, условия конкурса | enter to win, free stuff  |
 
-Full list available in `content.js`.
+Full list available in `src/content/presets.js`.
 
 ## License
 

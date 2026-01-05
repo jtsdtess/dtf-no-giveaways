@@ -16,31 +16,30 @@ const warningMsg = document.getElementById('warning')
 const hiddenCountEl = document.getElementById('hiddenCount')
 const wordCountEl = document.getElementById('wordCount')
 const presetCountEl = document.getElementById('presetCount')
-const keywordsTextarea = document.getElementById('keywords')
 
 // Текущее состояние
 let customKeywords = []
-let disabledPresets = [] // Отключенные предустановленные слова
+let disabledPresets = []
 let keywordStats = {}
-let hasUnsavedChanges = false
 let presetsCollapsed = false
 
-// ============================================
-// Показать/скрыть предупреждение о сохранении
-// ============================================
+/**
+ * Показывает предупреждение о несохранённых изменениях
+ */
 function showWarning() {
-  hasUnsavedChanges = true
   warningMsg.style.display = 'block'
 }
 
+/**
+ * Скрывает предупреждение о несохранённых изменениях
+ */
 function hideWarning() {
-  hasUnsavedChanges = false
   warningMsg.style.display = 'none'
 }
 
-// ============================================
-// Переключение видимости пресетов
-// ============================================
+/**
+ * Переключает видимость пресетов
+ */
 function togglePresets() {
   presetsCollapsed = !presetsCollapsed
   presetTagsContainer.classList.toggle('collapsed', presetsCollapsed)
@@ -51,18 +50,25 @@ function togglePresets() {
   chrome.storage.local.set({ presetsCollapsed })
 }
 
-// ============================================
-// Экранирование HTML
-// ============================================
+/**
+ * Экранирует специальные символы HTML для защиты от XSS
+ * @param {string} text - Исходный текст
+ * @returns {string} Экранированный текст
+ */
 function escapeHtml(text) {
   const div = document.createElement('div')
   div.textContent = text
   return div.innerHTML
 }
 
-// ============================================
-// Создание элемента тега
-// ============================================
+/**
+ * Создаёт DOM-элемент тега
+ * @param {string} keyword - Ключевое слово
+ * @param {number} count - Счётчик скрытых постов
+ * @param {boolean} isPreset - Является ли пресетом
+ * @param {boolean} isDisabled - Отключен ли пресет
+ * @returns {Element} Элемент тега
+ */
 function createTagElement(keyword, count, isPreset = false, isDisabled = false) {
   const tag = document.createElement('div')
   tag.className = `tag ${isPreset ? 'preset' : ''} ${isDisabled ? 'disabled' : ''}`
@@ -89,9 +95,10 @@ function createTagElement(keyword, count, isPreset = false, isDisabled = false) 
   return tag
 }
 
-// ============================================
-// Переключение пресета (включить/отключить)
-// ============================================
+/**
+ * Переключает статус пресета (активен/отключен)
+ * @param {string} keyword - Ключевое слово пресета
+ */
 function togglePresetKeyword(keyword) {
   const index = disabledPresets.indexOf(keyword)
   if (index > -1) {
@@ -105,9 +112,9 @@ function togglePresetKeyword(keyword) {
   showWarning()
 }
 
-// ============================================
-// Рендер кастомных тегов
-// ============================================
+/**
+ * Отрисовывает кастомные теги
+ */
 function renderCustomTags() {
   customTagsContainer.innerHTML = ''
 
@@ -125,9 +132,9 @@ function renderCustomTags() {
   updateWordCount()
 }
 
-// ============================================
-// Рендер предустановленных тегов
-// ============================================
+/**
+ * Отрисовывает предустановленные теги
+ */
 function renderPresetTags() {
   presetTagsContainer.innerHTML = ''
 
@@ -143,17 +150,19 @@ function renderPresetTags() {
   updateWordCount()
 }
 
-// ============================================
-// Обновление счётчика слов
-// ============================================
+/**
+ * Обновляет счётчик слов в интерфейсе
+ */
 function updateWordCount() {
   const activePresetsCount = PRESET_KEYWORDS.length - disabledPresets.length
   wordCountEl.textContent = customKeywords.length + activePresetsCount
 }
 
-// ============================================
-// Добавление ключевого слова
-// ============================================
+/**
+ * Добавляет новое ключевое слово
+ * @param {string} text - Текст для добавления
+ * @returns {boolean} Успешно ли добавлено
+ */
 function addKeyword(text) {
   const keyword = text.trim().toLowerCase()
 
@@ -164,7 +173,6 @@ function addKeyword(text) {
   }
 
   customKeywords.unshift(keyword)
-  keywordsTextarea.value = customKeywords.join('\n')
   renderCustomTags()
   addInput.value = ''
   addInput.focus()
@@ -173,19 +181,19 @@ function addKeyword(text) {
   return true
 }
 
-// ============================================
-// Удаление кастомного слова
-// ============================================
+/**
+ * Удаляет кастомное ключевое слово
+ * @param {string} keyword - Слово для удаления
+ */
 function removeCustomKeyword(keyword) {
   customKeywords = customKeywords.filter((k) => k !== keyword)
-  keywordsTextarea.value = customKeywords.join('\n')
   renderCustomTags()
   showWarning()
 }
 
-// ============================================
-// Загрузка сохранённых данных
-// ============================================
+/**
+ * Загружает сохранённые данные из chrome.storage
+ */
 function loadKeywords() {
   chrome.storage.sync.get(['customKeywords', 'disabledPresets'], (result) => {
     if (chrome.runtime.lastError) {
@@ -199,7 +207,6 @@ function loadKeywords() {
       }
     }
 
-    keywordsTextarea.value = customKeywords.join('\n')
     renderCustomTags()
     renderPresetTags()
     hideWarning()
@@ -217,9 +224,9 @@ function loadKeywords() {
   })
 }
 
-// ============================================
-// Сохранение ключевых слов
-// ============================================
+/**
+ * Сохраняет ключевые слова в chrome.storage и обновляет фильтрацию на вкладке
+ */
 function saveKeywords() {
   chrome.storage.sync.set({ customKeywords, disabledPresets }, () => {
     if (chrome.runtime.lastError) {
@@ -247,24 +254,23 @@ function saveKeywords() {
   })
 }
 
-// ============================================
-// Сброс кастомных слов
-// ============================================
+/**
+ * Сбрасывает все кастомные слова и восстанавливает пресеты
+ */
 function resetKeywords() {
   if (!confirm('Удалить все добавленные слова и восстановить пресеты?')) return
 
   customKeywords = []
   disabledPresets = []
-  keywordsTextarea.value = ''
   keywordStats = {}
   renderCustomTags()
   renderPresetTags()
   showWarning()
 }
 
-// ============================================
-// Получение статистики скрытых постов
-// ============================================
+/**
+ * Получает статистику скрытых постов с активной вкладки
+ */
 function getStats() {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     if (chrome.runtime.lastError) return

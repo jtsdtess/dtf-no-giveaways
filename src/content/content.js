@@ -34,24 +34,24 @@ const PLACEHOLDER_STYLES = {
     'transform: scale(1.005); box-shadow: 0 4px 12px rgba(233, 69, 96, 0.2)',
 }
 
-let keywords = [...PRESET_KEYWORDS]
 let customKeywords = []
-let disabledPresets = [] // Отключенные предустановленные слова
+let disabledPresets = []
 let hiddenCount = 0
-// Статистика: { слово: количество_скрытых_постов }
 const keywordStats = {}
 
-// ============================================
-// Получить полный список слов для фильтрации
-// ============================================
+/**
+ * Возвращает полный список активных слов для фильтрации
+ * @returns {string[]} Массив ключевых слов
+ */
 function getAllKeywords() {
   const activePresets = PRESET_KEYWORDS.filter((k) => !disabledPresets.includes(k))
   return [...new Set([...activePresets, ...customKeywords])]
 }
 
-// ============================================
-// Загрузка пользовательских слов из хранилища
-// ============================================
+/**
+ * Загружает пользовательские слова из chrome.storage.sync
+ * @returns {Promise<void>}
+ */
 function loadKeywords() {
   return new Promise((resolve) => {
     chrome.storage.sync.get(['customKeywords', 'disabledPresets'], (result) => {
@@ -65,18 +65,20 @@ function loadKeywords() {
           disabledPresets = result.disabledPresets
         }
       }
-      keywords = getAllKeywords()
       resolve()
     })
   })
 }
 
-// ============================================
-// Проверка: содержит ли текст запрещённые слова
-// ============================================
+/**
+ * Проверяет, содержит ли текст запрещённые слова
+ * @param {string} text - Проверяемый текст
+ * @returns {string|null} Найденное ключевое слово или null
+ */
 function containsKeyword(text) {
   if (!text) return null
   const lowerText = text.toLowerCase()
+  const keywords = getAllKeywords()
   for (const keyword of keywords) {
     if (lowerText.includes(keyword.toLowerCase())) {
       return keyword
@@ -85,9 +87,11 @@ function containsKeyword(text) {
   return null
 }
 
-// ============================================
-// Получить текст из поста
-// ============================================
+/**
+ * Извлекает текст из поста по заданным селекторам
+ * @param {Element} postElement - Элемент поста
+ * @returns {string} Собранный текст поста
+ */
 function getPostText(postElement) {
   let text = ''
 
@@ -101,9 +105,11 @@ function getPostText(postElement) {
   return text
 }
 
-// ============================================
-// Скрыть пост с пометкой
-// ============================================
+/**
+ * Скрывает пост и заменяет его кликабельной плашкой
+ * @param {Element} postElement - Элемент поста
+ * @param {string} matchedKeyword - Найденное ключевое слово
+ */
 function hidePost(postElement, matchedKeyword) {
   if (postElement.dataset.dtfFiltered) return
 
@@ -170,9 +176,9 @@ function hidePost(postElement, matchedKeyword) {
   console.log(`[DTF Фильтр] Скрыт пост: "${matchedKeyword}"`)
 }
 
-// ============================================
-// Сканировать и фильтровать посты
-// ============================================
+/**
+ * Сканирует все посты на странице и скрывает содержащие ключевые слова
+ */
 function scanPosts() {
   const posts = document.querySelectorAll(POST_SELECTOR)
 
@@ -191,9 +197,9 @@ function scanPosts() {
   })
 }
 
-// ============================================
-// Снять фильтр со всех постов и отсканировать заново
-// ============================================
+/**
+ * Снимает фильтр со всех постов и выполняет повторное сканирование
+ */
 function refilterPosts() {
   // Сбрасываем статистику
   Object.keys(keywordStats).forEach((key) => delete keywordStats[key])
@@ -214,9 +220,9 @@ function refilterPosts() {
   scanPosts()
 }
 
-// ============================================
-// MutationObserver — следим за новыми постами
-// ============================================
+/**
+ * Настраивает MutationObserver для отслеживания новых постов при скролле
+ */
 function setupObserver() {
   const observer = new MutationObserver((mutations) => {
     let shouldScan = false
@@ -249,7 +255,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'UPDATE_KEYWORDS') {
     customKeywords = message.customKeywords || []
     disabledPresets = message.disabledPresets || []
-    keywords = getAllKeywords()
     refilterPosts()
     sendResponse({ success: true })
     return true
@@ -267,14 +272,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 })
 
-// ============================================
-// Инициализация
-// ============================================
+/**
+ * Инициализирует расширение: загружает настройки и запускает фильтрацию
+ * @returns {Promise<void>}
+ */
 async function init() {
   await loadKeywords()
   setTimeout(scanPosts, 500)
   setupObserver()
-  console.log('[DTF Фильтр] Запущен. Ключевые слова:', keywords)
+  console.log('[DTF Фильтр] Запущен. Ключевых слов:', getAllKeywords().length)
 }
 
 init()
