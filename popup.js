@@ -105,7 +105,7 @@ function addKeyword(text) {
     return false
   }
 
-  keywords.push(keyword)
+  keywords.unshift(keyword) // Добавляем в начало списка
   keywordsTextarea.value = keywords.join('\n')
   renderTags()
   addInput.value = ''
