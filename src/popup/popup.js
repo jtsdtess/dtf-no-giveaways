@@ -16,12 +16,17 @@ const warningMsg = document.getElementById('warning')
 const hiddenCountEl = document.getElementById('hiddenCount')
 const wordCountEl = document.getElementById('wordCount')
 const presetCountEl = document.getElementById('presetCount')
+const settingsBtn = document.getElementById('settingsBtn')
+const settingsModal = document.getElementById('settingsModal')
+const modalClose = document.getElementById('modalClose')
+const notifyToggle = document.getElementById('notifyToggle')
 
 // Текущее состояние
 let customKeywords = []
 let disabledPresets = []
 let keywordStats = {}
 let presetsCollapsed = false
+let showNotifications = false
 
 /**
  * Показывает предупреждение о несохранённых изменениях
@@ -192,6 +197,28 @@ function removeCustomKeyword(keyword) {
 }
 
 /**
+ * Открывает модальное окно настроек
+ */
+function openSettings() {
+  settingsModal.classList.add('open')
+}
+
+/**
+ * Закрывает модальное окно настроек
+ */
+function closeSettings() {
+  settingsModal.classList.remove('open')
+}
+
+/**
+ * Переключает настройку уведомлений
+ */
+function toggleNotification() {
+  showNotifications = notifyToggle.checked
+  chrome.storage.local.set({ showNotifications })
+}
+
+/**
  * Загружает сохранённые данные из chrome.storage
  */
 function loadKeywords() {
@@ -213,13 +240,17 @@ function loadKeywords() {
     getStats()
   })
 
-  // Загружаем состояние свернутости пресетов
-  chrome.storage.local.get(['presetsCollapsed'], (result) => {
+  // Загружаем состояние свернутости пресетов и уведомлений
+  chrome.storage.local.get(['presetsCollapsed', 'showNotifications'], (result) => {
     if (result.presetsCollapsed) {
       presetsCollapsed = true
       presetTagsContainer.classList.add('collapsed')
       presetToggle.classList.add('collapsed')
       presetToggle.textContent = '◀'
+    }
+    if (result.showNotifications) {
+      showNotifications = result.showNotifications
+      notifyToggle.checked = showNotifications
     }
   })
 }
@@ -242,12 +273,17 @@ function saveKeywords() {
     }, 2000)
 
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (chrome.runtime.lastError) return
-      if (tabs[0]?.url?.includes('dtf.ru')) {
+      if (chrome.runtime.lastError || !tabs[0]) return
+      if (tabs[0].url?.includes('dtf.ru')) {
         chrome.tabs.sendMessage(tabs[0].id, {
           type: 'UPDATE_KEYWORDS',
           customKeywords,
           disabledPresets,
+        }, () => {
+          // Игнорируем ошибку если content script не готов
+          if (chrome.runtime.lastError) {
+            // Content script ещё не загружен — это нормально
+          }
         })
       }
     })
@@ -273,9 +309,17 @@ function resetKeywords() {
  */
 function getStats() {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    if (chrome.runtime.lastError) return
-    if (tabs[0]?.url?.includes('dtf.ru')) {
+    if (chrome.runtime.lastError || !tabs[0]) {
+      hiddenCountEl.textContent = '—'
+      return
+    }
+    if (tabs[0].url?.includes('dtf.ru')) {
       chrome.tabs.sendMessage(tabs[0].id, { type: 'GET_STATS' }, (response) => {
+        if (chrome.runtime.lastError) {
+          // Content script не готов — игнорируем
+          hiddenCountEl.textContent = '—'
+          return
+        }
         if (response) {
           hiddenCountEl.textContent = response.hiddenCount || '—'
           keywordStats = response.keywordStats || {}
@@ -298,6 +342,12 @@ function getStats() {
 saveBtn.addEventListener('click', saveKeywords)
 resetBtn.addEventListener('click', resetKeywords)
 presetToggle.addEventListener('click', togglePresets)
+settingsBtn.addEventListener('click', openSettings)
+modalClose.addEventListener('click', closeSettings)
+settingsModal.addEventListener('click', (e) => {
+  if (e.target === settingsModal) closeSettings()
+})
+notifyToggle.addEventListener('change', toggleNotification)
 
 addBtn.addEventListener('click', () => {
   addKeyword(addInput.value)

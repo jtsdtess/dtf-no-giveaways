@@ -12,6 +12,30 @@ const TEXT_SELECTORS = [
   '.content__body',
 ]
 
+// Инъекция базовых стилей (с высокой специфичностью)
+const style = document.createElement('style')
+style.textContent = `
+  .content.dtf-filter-hidden,
+  div.content.dtf-filter-hidden,
+  [data-dtf-filtered].dtf-filter-hidden {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    overflow: hidden !important;
+  }
+
+  @keyframes dtf-slideIn {
+    from { transform: translateY(-20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  @keyframes dtf-fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+  }
+`
+document.head.appendChild(style)
+
 // Стили для плашки скрытого поста
 const PLACEHOLDER_STYLES = {
   base: `
@@ -37,7 +61,48 @@ const PLACEHOLDER_STYLES = {
 let customKeywords = []
 let disabledPresets = []
 let hiddenCount = 0
+let showNotifications = false
 const keywordStats = {}
+
+// Отслеживаем какие плашки уже показывали уведомление
+const notifiedPlaceholders = new WeakSet()
+
+// Intersection Observer для уведомлений когда плашка появляется на экране
+const intersectionObserver = new IntersectionObserver(
+  (entries) => {
+    if (!showNotifications) return
+    entries.forEach((entry) => {
+      if (entry.isIntersecting && !notifiedPlaceholders.has(entry.target)) {
+        notifiedPlaceholders.add(entry.target)
+        const keyword = entry.target.dataset.keyword
+        if (keyword) {
+          showToast(keyword)
+        }
+      }
+    })
+  },
+  { threshold: 0.1 }
+)
+
+// Стили для тост-уведомления
+const TOAST_STYLES = `
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border: 1px solid #e94560;
+  border-radius: 8px;
+  padding: 12px 16px;
+  color: #eee;
+  font-size: 13px;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  animation: dtf-slideIn 0.2s ease, dtf-fadeOut 0.3s ease 2.3s forwards;
+  max-width: 300px;
+`
 
 /**
  * Возвращает полный список активных слов для фильтрации
@@ -46,6 +111,33 @@ const keywordStats = {}
 function getAllKeywords() {
   const activePresets = PRESET_KEYWORDS.filter((k) => !disabledPresets.includes(k))
   return [...new Set([...activePresets, ...customKeywords])]
+}
+
+/**
+ * Показывает тост-уведомление о скрытом посте
+ * @param {string} keyword - Найденное ключевое слово
+ */
+function showToast(keyword) {
+  const toast = document.createElement('div')
+  toast.className = 'dtf-filter-toast'
+  toast.style.cssText = TOAST_STYLES
+  toast.innerHTML = `
+    <span style="font-size: 16px;">🚫</span>
+    <span>Скрыт пост: <strong style="color: #e94560;">${escapeHtml(keyword)}</strong></span>
+  `
+  document.body.appendChild(toast)
+  setTimeout(() => toast.remove(), 3000)
+}
+
+/**
+ * Экранирует HTML для безопасности
+ * @param {string} text - Исходный текст
+ * @returns {string} Экранированный текст
+ */
+function escapeHtml(text) {
+  const div = document.createElement('div')
+  div.textContent = text
+  return div.innerHTML
 }
 
 /**
@@ -66,6 +158,12 @@ function loadKeywords() {
         }
       }
       resolve()
+    })
+
+    chrome.storage.local.get(['showNotifications'], (result) => {
+      if (result.showNotifications !== undefined) {
+        showNotifications = result.showNotifications
+      }
     })
   })
 }
@@ -119,42 +217,45 @@ function hidePost(postElement, matchedKeyword) {
   // Записываем статистику по слову
   keywordStats[matchedKeyword] = (keywordStats[matchedKeyword] || 0) + 1
 
-  const originalDisplay = window.getComputedStyle(postElement).display
-
   const placeholder = document.createElement('div')
   placeholder.className = 'dtf-filter-placeholder'
+  placeholder.dataset.keyword = matchedKeyword
   placeholder.style.cssText = PLACEHOLDER_STYLES.base
 
   placeholder.innerHTML = `
     <span style="display: flex; align-items: center; gap: 8px;">
       <span style="font-size: 18px;">🚫</span>
-      <span>[Скрыто: <strong style="color: #e94560;">${matchedKeyword}</strong>]</span>
+      <span>[Скрыто: <strong style="color: #e94560;">${escapeHtml(matchedKeyword)}</strong>]</span>
     </span>
     <span style="color: #666; font-size: 12px;">Нажмите, чтобы показать</span>
   `
 
-  postElement.style.display = 'none'
+  // Добавляем класс для скрытия вместо inline style (более надёжно)
+  postElement.classList.add('dtf-filter-hidden')
   postElement.parentNode.insertBefore(placeholder, postElement)
+
+  // Отслеживаем когда плашка появится на экране для уведомления
+  intersectionObserver.observe(placeholder)
 
   let isHidden = true
   placeholder.addEventListener('click', () => {
     if (isHidden) {
-      postElement.style.display = originalDisplay || 'block'
+      postElement.classList.remove('dtf-filter-hidden')
       placeholder.innerHTML = `
         <span style="display: flex; align-items: center; gap: 8px;">
           <span style="font-size: 18px;">👁️</span>
-          <span>[Показано: <strong style="color: #4ecca3;">${matchedKeyword}</strong>]</span>
+          <span>[Показано: <strong style="color: #4ecca3;">${escapeHtml(matchedKeyword)}</strong>]</span>
         </span>
         <span style="color: #666; font-size: 12px;">Нажмите, чтобы скрыть</span>
       `
       placeholder.style.cssText =
         PLACEHOLDER_STYLES.base + PLACEHOLDER_STYLES.shown
     } else {
-      postElement.style.display = 'none'
+      postElement.classList.add('dtf-filter-hidden')
       placeholder.innerHTML = `
         <span style="display: flex; align-items: center; gap: 8px;">
           <span style="font-size: 18px;">🚫</span>
-          <span>[Скрыто: <strong style="color: #e94560;">${matchedKeyword}</strong>]</span>
+          <span>[Скрыто: <strong style="color: #e94560;">${escapeHtml(matchedKeyword)}</strong>]</span>
         </span>
         <span style="color: #666; font-size: 12px;">Нажмите, чтобы показать</span>
       `
@@ -205,15 +306,18 @@ function refilterPosts() {
   Object.keys(keywordStats).forEach((key) => delete keywordStats[key])
   hiddenCount = 0
 
-  // Удаляем все плашки
+  // Отключаем observer и удаляем все плашки
   document
     .querySelectorAll('.dtf-filter-placeholder')
-    .forEach((el) => el.remove())
+    .forEach((el) => {
+      intersectionObserver.unobserve(el)
+      el.remove()
+    })
 
-  // Снимаем метки фильтрации
+  // Снимаем метки фильтрации и класс
   document.querySelectorAll('[data-dtf-filtered]').forEach((post) => {
     delete post.dataset.dtfFiltered
-    post.style.display = ''
+    post.classList.remove('dtf-filter-hidden')
   })
 
   // Сканируем заново
@@ -238,7 +342,7 @@ function setupObserver() {
     })
 
     if (shouldScan) {
-      setTimeout(scanPosts, 150)
+      setTimeout(scanPosts, 50)
     }
   })
 
