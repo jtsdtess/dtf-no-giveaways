@@ -2,105 +2,48 @@
 // DTF Фильтр розыгрышей — Content Script
 // ============================================
 
-// Слова для фильтрации по умолчанию
+// Слова для фильтрации по умолчанию (дублируется в popup.js)
 const DEFAULT_KEYWORDS = [
-  // Основные
-  'розыгрыш',
-  'розыграю',
-  'разыгрываю',
-  'разыгрываем',
-  'разыграем',
-  'раздача',
-  'раздаю',
-  'раздаём',
-  'конкурс',
-  'giveaway',
-  'give away',
-  'giveway',
-
-  // Призы
-  'приз',
-  'призы',
-  'выиграй',
-  'выиграть',
-  'победитель получит',
-  'победителю достанется',
-  'подарю подписчику',
-  'подарю рандомному',
-  'дарю подписчику',
-
-  // Механики участия
-  'репост и подписка',
-  'подпишись и',
-  'лайк и подписка',
-  'оставь коммент',
-  'напиши в комментах',
-  'случайный комментатор',
-  'рандомный комментатор',
-  'random comment',
-  'выберу случайного',
-  'выберу рандомного',
-  'рандомайзер',
-  'randomizer',
-
-  // Определение победителя
-  'итоги подведём',
-  'итоги подведем',
-  'итоги розыгрыша',
-  'итоги конкурса',
-  'победитель будет',
-  'определим победителя',
-  'выбор победителя',
-
-  // Steam/игры
-  'разыграю ключ',
-  'раздам ключ',
-  'раздам ключи',
-  'дарю ключ',
-  'дарю steam',
-  'steam key',
-  'free key',
-  'халявный ключ',
-  'бесплатный ключ',
-
-  // Англицизмы
-  'contest',
-  'sweepstakes',
-  'lottery',
-  'raffle',
-  'win a',
-  'chance to win',
-  'enter to win',
-  'free stuff',
-
-  // Триггерные фразы
-  'участвуй',
-  'участвуйте',
-  'прими участие',
-  'примите участие',
-  'для участия',
-  'условия участия',
-  'условия розыгрыша',
-  'условия конкурса',
-  'правила розыгрыша',
-  'правила конкурса',
+  'розыгрыш', 'розыграю', 'разыгрываю', 'разыгрываем', 'разыграем',
+  'раздача', 'раздаю', 'раздаём', 'конкурс',
+  'giveaway', 'give away', 'giveway',
+  'приз', 'призы', 'выиграй', 'выиграть', 'победитель получит', 'победителю достанется',
+  'подарю подписчику', 'подарю рандомному', 'дарю подписчику',
+  'репост и подписка', 'подпишись и', 'лайк и подписка',
+  'оставь коммент', 'напиши в комментах', 'случайный комментатор', 'рандомный комментатор',
+  'random comment', 'выберу случайного', 'выберу рандомного', 'рандомайзер', 'randomizer',
+  'итоги подведём', 'итоги подведем', 'итоги розыгрыша', 'итоги конкурса',
+  'победитель будет', 'определим победителя', 'выбор победителя',
+  'разыграю ключ', 'раздам ключ', 'раздам ключи', 'дарю ключ', 'дарю steam',
+  'steam key', 'free key', 'халявный ключ', 'бесплатный ключ',
+  'contest', 'sweepstakes', 'lottery', 'raffle', 'win a', 'chance to win', 'enter to win', 'free stuff',
+  'участвуй', 'участвуйте', 'прими участие', 'примите участие', 'для участия',
+  'условия участия', 'условия розыгрыша', 'условия конкурса', 'правила розыгрыша', 'правила конкурса',
 ]
 
-// Селекторы для поиска постов на DTF
-const POST_SELECTORS = [
-  'div.content.content--short',
-  'div.content.content--full',
-  'div.content',
-]
+const POST_SELECTOR = 'div.content'
+const TEXT_SELECTORS = ['.content-title a', '.content-title', '.block-text p', '.block-text', '.content__body']
 
-// Селекторы для текста внутри поста
-const TEXT_SELECTORS = [
-  '.content-title a',
-  '.content-title',
-  '.block-text p',
-  '.block-text',
-  '.content__body',
-]
+// Стили для плашки скрытого поста
+const PLACEHOLDER_STYLES = {
+  base: `
+    padding: 16px 20px;
+    margin: 8px 0;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border: 1px solid #e94560;
+    border-radius: 8px;
+    color: #a0a0a0;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+  `,
+  shown: 'border-color: #4ecca3',
+  hover: 'transform: scale(1.005); box-shadow: 0 4px 12px rgba(233, 69, 96, 0.2)',
+}
 
 let keywords = [...DEFAULT_KEYWORDS]
 let hiddenCount = 0
@@ -111,7 +54,9 @@ let hiddenCount = 0
 function loadKeywords() {
   return new Promise((resolve) => {
     chrome.storage.sync.get(['keywords'], (result) => {
-      if (result.keywords && Array.isArray(result.keywords)) {
+      if (chrome.runtime.lastError) {
+        console.error('[DTF Фильтр] Ошибка загрузки:', chrome.runtime.lastError)
+      } else if (result.keywords && Array.isArray(result.keywords)) {
         keywords = result.keywords
       }
       resolve()
@@ -162,21 +107,7 @@ function hidePost(postElement, matchedKeyword) {
 
   const placeholder = document.createElement('div')
   placeholder.className = 'dtf-filter-placeholder'
-  placeholder.style.cssText = `
-    padding: 16px 20px;
-    margin: 8px 0;
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-    border: 1px solid #e94560;
-    border-radius: 8px;
-    color: #a0a0a0;
-    font-size: 14px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    transition: all 0.2s ease;
-    box-sizing: border-box;
-  `
+  placeholder.style.cssText = PLACEHOLDER_STYLES.base
 
   placeholder.innerHTML = `
     <span style="display: flex; align-items: center; gap: 8px;">
@@ -200,7 +131,7 @@ function hidePost(postElement, matchedKeyword) {
         </span>
         <span style="color: #666; font-size: 12px;">Нажмите, чтобы скрыть</span>
       `
-      placeholder.style.borderColor = '#4ecca3'
+      placeholder.style.cssText = PLACEHOLDER_STYLES.base + PLACEHOLDER_STYLES.shown
     } else {
       postElement.style.display = 'none'
       placeholder.innerHTML = `
@@ -210,18 +141,16 @@ function hidePost(postElement, matchedKeyword) {
         </span>
         <span style="color: #666; font-size: 12px;">Нажмите, чтобы показать</span>
       `
-      placeholder.style.borderColor = '#e94560'
+      placeholder.style.cssText = PLACEHOLDER_STYLES.base
     }
     isHidden = !isHidden
   })
 
   placeholder.addEventListener('mouseenter', () => {
-    placeholder.style.transform = 'scale(1.005)'
-    placeholder.style.boxShadow = '0 4px 12px rgba(233, 69, 96, 0.2)'
+    placeholder.style.cssText = PLACEHOLDER_STYLES.base + PLACEHOLDER_STYLES.hover
   })
   placeholder.addEventListener('mouseleave', () => {
-    placeholder.style.transform = 'scale(1)'
-    placeholder.style.boxShadow = 'none'
+    placeholder.style.cssText = isHidden ? PLACEHOLDER_STYLES.base : PLACEHOLDER_STYLES.base + PLACEHOLDER_STYLES.shown
   })
 
   console.log(`[DTF Фильтр] Скрыт пост: "${matchedKeyword}"`)
@@ -231,7 +160,7 @@ function hidePost(postElement, matchedKeyword) {
 // Сканировать и фильтровать посты
 // ============================================
 function scanPosts() {
-  const posts = document.querySelectorAll('div.content')
+  const posts = document.querySelectorAll(POST_SELECTOR)
 
   posts.forEach((post) => {
     if (post.dataset.dtfFiltered) return
@@ -246,6 +175,23 @@ function scanPosts() {
       hidePost(post, matchedKeyword)
     }
   })
+}
+
+// ============================================
+// Снять фильтр со всех постов и отсканировать заново
+// ============================================
+function refilterPosts() {
+  // Удаляем все плашки
+  document.querySelectorAll('.dtf-filter-placeholder').forEach((el) => el.remove())
+
+  // Снимаем метки фильтрации
+  document.querySelectorAll('[data-dtf-filtered]').forEach((post) => {
+    delete post.dataset.dtfFiltered
+    post.style.display = ''
+  })
+
+  // Сканируем заново
+  scanPosts()
 }
 
 // ============================================
@@ -282,11 +228,14 @@ function setupObserver() {
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'UPDATE_KEYWORDS') {
     keywords = message.keywords
-    location.reload()
+    refilterPosts()
+    sendResponse({ success: true })
+    return true
   }
 
   if (message.type === 'GET_STATS') {
     sendResponse({ hiddenCount })
+    return true
   }
 })
 
