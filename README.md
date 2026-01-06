@@ -1,4 +1,4 @@
-# 🚫 DTF Фильтр розыгрышей
+# 🚫 DTF: Без розыгрышей
 
 > Chrome-расширение для автоматического скрытия постов с розыгрышами, конкурсами и раздачами на [DTF.ru](https://dtf.ru).
 
@@ -55,6 +55,9 @@
 ```
 dtf-filter/
 ├── manifest.json           # Manifest V3 конфигурация
+├── icon16.png              # Иконка 16×16
+├── icon48.png              # Иконка 48×48
+├── icon128.png             # Иконка 128×128
 ├── src/
 │   ├── content/
 │   │   ├── content.js      # Логика фильтрации и Intersection Observer
@@ -98,7 +101,7 @@ dtf-filter/
 
 ---
 
-# 🚫 DTF Giveaway Filter
+# 🚫 DTF: No Giveaways
 
 > A Chrome extension that automatically hides giveaway, contest, and raffle posts on [DTF.ru](https://dtf.ru).
 
@@ -154,6 +157,9 @@ The extension works automatically on all DTF pages after installation.
 ```
 dtf-filter/
 ├── manifest.json           # Manifest V3 configuration
+├── icon16.png              # Icon 16×16
+├── icon48.png              # Icon 48×48
+├── icon128.png             # Icon 128×128
 ├── src/
 │   ├── content/
 │   │   ├── content.js      # Filtering logic & Intersection Observer

@@ -3,6 +3,11 @@
   "name": "DTF Фильтр розыгрышей",
   "version": "1.0",
   "description": "Скрывает посты с розыгрышами на DTF.ru",
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
   "permissions": ["storage"],
   "host_permissions": ["https://dtf.ru/*", "https://*.dtf.ru/*"],
   "content_scripts": [
@@ -14,6 +19,11 @@
   ],
   "action": {
     "default_popup": "src/popup/popup.html",
-    "default_title": "DTF Фильтр"
+    "default_title": "DTF Фильтр",
+    "default_icon": {
+      "16": "icon16.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
+    }
   }
 }
