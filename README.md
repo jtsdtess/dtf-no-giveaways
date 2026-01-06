@@ -68,6 +68,7 @@ dtf-filter/
 │       └── popup.css       # Стили, анимации, тосты
 ├── assets/
 │   └── screenshots/        # Скриншоты
+├── PRIVACY.md              # Политика конфиденциальности
 └── README.md
 ```
 
@@ -88,6 +89,12 @@ dtf-filter/
 **chrome.storage.local** (локально):
 - `showNotifications` — показывать уведомления
 - `presetsCollapsed` — состояние свёрнутости пресетов
+
+## Конфиденциальность
+
+Расширение **НЕ собирает** персональные данные. Все данные (ключевые слова, настройки) хранятся только в браузере.
+
+Подробнее: [PRIVACY.md](PRIVACY.md)
 
 ## Лицензия
 
@@ -170,6 +177,7 @@ dtf-filter/
 │       └── popup.css       # Styles, animations, toasts
 ├── assets/
 │   └── screenshots/        # Screenshots
+├── PRIVACY.md              # Privacy policy
 └── README.md
 ```
 
@@ -190,6 +198,12 @@ dtf-filter/
 **chrome.storage.local** (local only):
 - `showNotifications` — show toast notifications
 - `presetsCollapsed` — presets section collapsed state
+
+## Privacy
+
+The extension does **NOT collect** any personal data. All data (keywords, settings) stays in your browser only.
+
+See: [PRIVACY.md](PRIVACY.md)
 
 ## Default Keywords
 
