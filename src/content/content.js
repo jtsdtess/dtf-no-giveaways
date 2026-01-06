@@ -4,6 +4,10 @@
 // PRESET_KEYWORDS загружается из presets.js (подключается в manifest.json)
 
 const POST_SELECTOR = 'div.content'
+const INITIAL_SCAN_DELAY = 500
+const MUTATION_SCAN_DELAY = 50
+const TOAST_REMOVE_DELAY = 3000
+const INTERSECTION_THRESHOLD = 0.1
 const TEXT_SELECTORS = [
   '.content-title a',
   '.content-title',
@@ -81,7 +85,7 @@ const intersectionObserver = new IntersectionObserver(
       }
     })
   },
-  { threshold: 0.1 }
+  { threshold: INTERSECTION_THRESHOLD }
 )
 
 // Стили для тост-уведомления
@@ -126,7 +130,7 @@ function showToast(keyword) {
     <span>Скрыт пост: <strong style="color: #e94560;">${escapeHtml(keyword)}</strong></span>
   `
   document.body.appendChild(toast)
-  setTimeout(() => toast.remove(), 3000)
+  setTimeout(() => toast.remove(), TOAST_REMOVE_DELAY)
 }
 
 /**
@@ -273,8 +277,6 @@ function hidePost(postElement, matchedKeyword) {
       ? PLACEHOLDER_STYLES.base
       : PLACEHOLDER_STYLES.base + PLACEHOLDER_STYLES.shown
   })
-
-  console.log(`[DTF Фильтр] Скрыт пост: "${matchedKeyword}"`)
 }
 
 /**
@@ -342,7 +344,7 @@ function setupObserver() {
     })
 
     if (shouldScan) {
-      setTimeout(scanPosts, 50)
+      setTimeout(scanPosts, MUTATION_SCAN_DELAY)
     }
   })
 
@@ -382,9 +384,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
  */
 async function init() {
   await loadKeywords()
-  setTimeout(scanPosts, 500)
+  setTimeout(scanPosts, INITIAL_SCAN_DELAY)
   setupObserver()
-  console.log('[DTF Фильтр] Запущен. Ключевых слов:', getAllKeywords().length)
 }
 
 init()

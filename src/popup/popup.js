@@ -3,9 +3,13 @@
 // ============================================
 // PRESET_KEYWORDS загружается из presets.js
 
+const SUCCESS_MSG_DELAY = 2000
+
 // DOM элементы
 const addInput = document.getElementById('addInput')
 const addBtn = document.getElementById('addBtn')
+const searchInput = document.getElementById('searchInput')
+const searchClear = document.getElementById('searchClear')
 const customTagsContainer = document.getElementById('customTagsContainer')
 const presetTagsContainer = document.getElementById('presetTagsContainer')
 const presetToggle = document.getElementById('presetToggle')
@@ -27,6 +31,21 @@ let disabledPresets = []
 let keywordStats = {}
 let presetsCollapsed = false
 let showNotifications = false
+let searchQuery = ''
+
+/**
+ * Показывает предупреждение о несохранённых изменениях
+ */
+
+/**
+ * Проверяет, подходит ли ключевое слово под поисковый запрос
+ * @param {string} keyword - Ключевое слово
+ * @returns {boolean} Подходит ли под фильтр
+ */
+function matchesSearch(keyword) {
+  if (!searchQuery) return true
+  return keyword.toLowerCase().includes(searchQuery.toLowerCase())
+}
 
 /**
  * Показывает предупреждение о несохранённых изменениях
@@ -123,12 +142,18 @@ function togglePresetKeyword(keyword) {
 function renderCustomTags() {
   customTagsContainer.innerHTML = ''
 
-  if (customKeywords.length === 0) {
-    customTagsContainer.innerHTML = '<div class="empty-state">Нет добавленных слов</div>'
+  const filteredKeywords = customKeywords.filter(matchesSearch)
+
+  if (filteredKeywords.length === 0) {
+    if (searchQuery) {
+      customTagsContainer.innerHTML = '<div class="empty-state">Ничего не найдено</div>'
+    } else {
+      customTagsContainer.innerHTML = '<div class="empty-state">Нет добавленных слов</div>'
+    }
     return
   }
 
-  customKeywords.forEach((keyword) => {
+  filteredKeywords.forEach((keyword) => {
     const count = keywordStats[keyword] || 0
     const tag = createTagElement(keyword, count, false, false)
     customTagsContainer.appendChild(tag)
@@ -143,7 +168,9 @@ function renderCustomTags() {
 function renderPresetTags() {
   presetTagsContainer.innerHTML = ''
 
-  PRESET_KEYWORDS.forEach((keyword) => {
+  const filteredPresets = PRESET_KEYWORDS.filter(matchesSearch)
+
+  filteredPresets.forEach((keyword) => {
     const isDisabled = disabledPresets.includes(keyword)
     const count = keywordStats[keyword] || 0
     const tag = createTagElement(keyword, count, true, isDisabled)
@@ -270,7 +297,7 @@ function saveKeywords() {
     successMsg.style.display = 'block'
     setTimeout(() => {
       successMsg.style.display = 'none'
-    }, 2000)
+    }, SUCCESS_MSG_DELAY)
 
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (chrome.runtime.lastError || !tabs[0]) return
@@ -358,6 +385,35 @@ addInput.addEventListener('keydown', (e) => {
     e.preventDefault()
     addKeyword(addInput.value)
   }
+})
+
+// Поиск по тегам
+searchInput.addEventListener('input', (e) => {
+  searchQuery = e.target.value.trim()
+  searchClear.classList.toggle('visible', searchQuery.length > 0)
+
+  // Раскрываем секции при поиске, возвращаем состояние при очистке
+  if (searchQuery.length > 0) {
+    presetTagsContainer.classList.remove('collapsed')
+  } else {
+    presetTagsContainer.classList.toggle('collapsed', presetsCollapsed)
+  }
+
+  renderCustomTags()
+  renderPresetTags()
+})
+
+searchClear.addEventListener('click', () => {
+  searchQuery = ''
+  searchInput.value = ''
+  searchClear.classList.remove('visible')
+
+  // Возвращаем состояние свернутости пресетов
+  presetTagsContainer.classList.toggle('collapsed', presetsCollapsed)
+
+  renderCustomTags()
+  renderPresetTags()
+  searchInput.focus()
 })
 
 // Ctrl+S для сохранения

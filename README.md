@@ -9,6 +9,7 @@
 
 - **Автоматическая фильтрация** — посты скрываются при загрузке и при скролле (infinite scroll)
 - **Визуальные теги** — управление словами через интерактивные теги с счётчиками скрытых постов
+- **Поиск по словам** — фильтрация тегов в реальном времени
 - **~90 предустановленных слов** — готовый список, можно отключать индивидуально
 - **Кастомные слова** — добавляй свои слова для фильтрации
 - **Уведомления** — тосты при скрытии постов (опционально)
@@ -108,6 +109,7 @@ dtf-filter/
 
 - **Automatic filtering** — posts are hidden on page load and during infinite scroll
 - **Visual tag UI** — manage keywords via interactive tags with hidden post counters
+- **Search by keywords** — filter tags in real-time
 - **~90 preset keywords** — built-in word list, individually toggleable
 - **Custom keywords** — add your own filter words
 - **Toast notifications** — alerts when posts are hidden (optional)
