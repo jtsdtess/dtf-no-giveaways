@@ -1,5 +1,5 @@
 // ============================================
-// DTF Фильтр — Popup Script
+// DTF Фильтр слов — Popup Script
 // ============================================
 // PRESET_KEYWORDS загружается из presets.js
 
@@ -251,7 +251,7 @@ function toggleNotification() {
 function loadKeywords() {
   chrome.storage.sync.get(['customKeywords', 'disabledPresets'], (result) => {
     if (chrome.runtime.lastError) {
-      console.error('[DTF Фильтр] Ошибка загрузки:', chrome.runtime.lastError)
+      console.error('[DTF Фильтр слов] Ошибка загрузки:', chrome.runtime.lastError)
     } else {
       if (result.customKeywords && Array.isArray(result.customKeywords)) {
         customKeywords = result.customKeywords
@@ -288,7 +288,7 @@ function loadKeywords() {
 function saveKeywords() {
   chrome.storage.sync.set({ customKeywords, disabledPresets }, () => {
     if (chrome.runtime.lastError) {
-      console.error('[DTF Фильтр] Ошибка сохранения:', chrome.runtime.lastError)
+      console.error('[DTF Фильтр слов] Ошибка сохранения:', chrome.runtime.lastError)
       alert('Ошибка сохранения. Попробуйте снова.')
       return
     }

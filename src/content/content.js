@@ -1,5 +1,5 @@
 // ============================================
-// DTF Фильтр розыгрышей — Content Script
+// DTF Фильтр слов — Content Script
 // ============================================
 // PRESET_KEYWORDS загружается из presets.js (подключается в manifest.json)
 
@@ -152,7 +152,7 @@ function loadKeywords() {
   return new Promise((resolve) => {
     chrome.storage.sync.get(['customKeywords', 'disabledPresets'], (result) => {
       if (chrome.runtime.lastError) {
-        console.error('[DTF Фильтр] Ошибка загрузки:', chrome.runtime.lastError)
+        console.error('[DTF Фильтр слов] Ошибка загрузки:', chrome.runtime.lastError)
       } else {
         if (result.customKeywords && Array.isArray(result.customKeywords)) {
           customKeywords = result.customKeywords

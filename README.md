@@ -1,6 +1,6 @@
-# 🚫 DTF: Без розыгрышей
+# 🚫 DTF Фильтр слов
 
-> Chrome-расширение для автоматического скрытия постов с розыгрышами, конкурсами и раздачами на [DTF.ru](https://dtf.ru).
+> Chrome-расширение для автоматического скрытия постов с определенными словами на [DTF.ru](https://dtf.ru).
 
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 [![Chrome](https://img.shields.io/badge/Chrome-Extension-green)](https://github.com/jtsdtess/dtf-no-giveaways)
@@ -108,9 +108,9 @@ dtf-filter/
 
 ---
 
-# 🚫 DTF: No Giveaways
+# 🚫 DTF Word Filter
 
-> A Chrome extension that automatically hides giveaway, contest, and raffle posts on [DTF.ru](https://dtf.ru).
+> A Chrome extension that automatically hides posts containing specified keywords on [DTF.ru](https://dtf.ru).
 
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 [![Chrome](https://img.shields.io/badge/Chrome-Extension-green)](https://github.com/jtsdtess/dtf-no-giveaways)
