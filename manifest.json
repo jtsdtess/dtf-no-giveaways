@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "DTF Фильтр розыгрышей",
+  "name": "DTF Фильтр слов",
   "version": "1.0",
-  "description": "Скрывает посты с розыгрышами на DTF.ru",
+  "description": "Скрывает посты с определенными словами на DTF.ru",
   "icons": {
     "16": "icon16.png",
     "48": "icon48.png",
@@ -19,7 +19,7 @@
   ],
   "action": {
     "default_popup": "src/popup/popup.html",
-    "default_title": "DTF Фильтр",
+    "default_title": "DTF Фильтр слов",
     "default_icon": {
       "16": "icon16.png",
       "48": "icon48.png",
